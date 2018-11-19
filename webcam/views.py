@@ -13,30 +13,27 @@ def webcam(request):
     template = loader.get_template('index.html')
     return HttpResponse(template.render({}, request))
 
-# face_recognition đang bị lỗi argmin of empty sequence, lấy min của mảng rỗng
 def stream(process_func):
-    cap = cv2.VideoCapture('bach.mp4')
+    cap = cv2.VideoCapture('ronaldo.mp4')
 
     indice = 0
     count_frame = 0
     while True:
         ret, frame = cap.read()
 
-        if count_frame >= 2000:
-            if not ret:
-                print("Error: failed to capture image")
-                break
+        if not ret:
+            print("Error: failed to capture image")
+            break
 
-            if (indice % 40 == 0):
-                frame = process_func(frame)
-            ret, frame = cv2.imencode('.jpg', frame)
+        if (indice % 40 == 0):
+            frame = process_func(frame, indice)
+        ret, frame = cv2.imencode('.jpg', frame)
 
-            yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
+        yield (b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
 
-            indice += 1
+        indice += 1
         
-        count_frame += 1
 
 
 def human_detection(request):

@@ -41,13 +41,17 @@ def get_encodings_db():
 
 #  known_face_encodings, known_face_names = get_encodings('./face_db')
 known_face_encodings, known_face_names = get_encodings_db()
+known_face_frame = {}
+for face_name in known_face_names:
+    known_face_frame[face_name] = -1000
+
 
 
 def detection(img):
     return face_recognition.face_locations(img, model='hog')
 
 
-def recognition(img, locations=None, known_face_encodings=known_face_encodings, known_face_names=known_face_names,
+def recognition(img, locations=None, frame_index=0, known_face_encodings=known_face_encodings, known_face_names=known_face_names,
                 threshold=0.4):
     face_encodings = face_recognition.face_encodings(img, locations, num_jitters=1)
     face_names = []
@@ -59,7 +63,14 @@ def recognition(img, locations=None, known_face_encodings=known_face_encodings, 
 
         if distances[min_idx] < threshold:
             face_names.append(known_face_names[min_idx])
-            print(known_face_names[min_idx] + '\t' + str(datetime.datetime.now()) + '\n')
+            
+            diff_frame = frame_index - known_face_frame[known_face_names[min_idx]]
+            if (diff_frame > 100):
+                print(known_face_names[min_idx] + '\t' + str(datetime.datetime.now()) + '\n')
+                with open('result.txt', 'a') as result:
+                    result.write(known_face_names[min_idx] + '\t' + str(datetime.datetime.now()) + '\n')
+
+            known_face_frame[known_face_names[min_idx]] = frame_index
         else:
             face_names.append("Unknown")
 
@@ -70,11 +81,11 @@ def preprocessing(img, fx=1, fy=1):
     return cv2.resize(RGB_revert(img), (0, 0), fx=fx, fy=fy)
 
 
-def recognized_img(img, fx=1, fy=1):
+def recognized_img(img, indice, fx=1, fy=1):
     procecced_img = preprocessing(img, fx, fy)
 
     face_locations = detection(procecced_img)
-    face_names = recognition(procecced_img, locations=face_locations)
+    face_names = recognition(procecced_img, frame_index=indice, locations=face_locations)
 
     # Display the results
     for (top, right, bottom, left), name in zip(face_locations, face_names):
