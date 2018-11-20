@@ -56,6 +56,8 @@ def recognition(img, locations=None, frame_index=0, known_face_encodings=known_f
     face_encodings = face_recognition.face_encodings(img, locations, num_jitters=1)
     face_names = []
 
+    face_times = []
+
     for face_encoding in face_encodings:
         distances = face_recognition.face_distance(known_face_encodings, face_encoding)
 
@@ -65,16 +67,18 @@ def recognition(img, locations=None, frame_index=0, known_face_encodings=known_f
             face_names.append(known_face_names[min_idx])
             
             diff_frame = frame_index - known_face_frame[known_face_names[min_idx]]
+
             if (diff_frame > 100):
-                print(known_face_names[min_idx] + '\t' + str(datetime.datetime.now()) + '\n')
-                with open('result.txt', 'a') as result:
-                    result.write(known_face_names[min_idx] + '\t' + str(datetime.datetime.now()) + '\n')
+                # print(known_face_names[min_idx] + '\t' + str(datetime.datetime.now()) + '\n')
+                # with open('result.txt', 'a') as result:
+                #     result.write(known_face_names[min_idx] + '\t' + str(datetime.datetime.now()) + '\n')
+                face_times.append((known_face_names[min_idx], frame_index))
 
             known_face_frame[known_face_names[min_idx]] = frame_index
         else:
             face_names.append("Unknown")
 
-    return face_names
+    return face_names, face_times
 
 
 def preprocessing(img, fx=1, fy=1):
@@ -85,8 +89,7 @@ def recognized_img(img, indice, fx=1, fy=1):
     procecced_img = preprocessing(img, fx, fy)
 
     face_locations = detection(procecced_img)
-    face_names = recognition(procecced_img, frame_index=indice, locations=face_locations)
-
+    face_names, face_times = recognition(procecced_img, frame_index=indice, locations=face_locations)
     # Display the results
     for (top, right, bottom, left), name in zip(face_locations, face_names):
         # Scale back up face locations since the frame we detected in was scaled to 1/4 size
@@ -103,4 +106,4 @@ def recognized_img(img, indice, fx=1, fy=1):
         font = cv2.FONT_HERSHEY_DUPLEX
         cv2.putText(img, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
-    return img
+    return img, face_times

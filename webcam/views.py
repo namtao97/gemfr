@@ -1,4 +1,5 @@
 import os
+import datetime
 
 import cv2
 from django.http import HttpResponse, StreamingHttpResponse
@@ -13,8 +14,26 @@ def webcam(request):
     template = loader.get_template('index.html')
     return HttpResponse(template.render({}, request))
 
-def stream(process_func):
-    cap = cv2.VideoCapture('ronaldo.mp4')
+
+def get_start_time(file_name):
+    time_str = file_name.split('_')[3]
+    year = int(time_str[:4])
+    month = int(time_str[4:6])
+    day = int(time_str[6:8])
+    hour = int(time_str[8:10])
+    minute = int(time_str[10:12])
+    second = int(time_str[12:14])
+
+    res = datetime.datetime(year, month, day, hour, minute, second)
+    return res
+
+
+def process_video(file_name):
+    video_path = 'video/' + file_name
+    cap = cv2.VideoCapture(video_path)
+    time_begin = get_start_time(file_name)
+
+    face_times = []
 
     indice = 0
     count_frame = 0
@@ -26,14 +45,64 @@ def stream(process_func):
             break
 
         if (indice % 40 == 0):
-            frame = process_func(frame, indice)
+            frame, curr_face_times = process_func(frame, indice)
+
         ret, frame = cv2.imencode('.jpg', frame)
+        face_times.extend(curr_face_times)
 
         yield (b'--frame\r\n'
             b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
 
         indice += 1
-        
+
+    with open('result.txt', 'a') as result:
+        for name, frame_idex in face_times:
+            time_appear = time_begin + datetime.timedelta(0, frame_index / 25)
+            result.write(name + '\t' + str(time_appear))
+
+
+
+def stream(process_func):
+    result = open('result.txt', 'a')
+
+    for file in os.listdir('video'):
+        if file.endswith('.mp4'):
+            video_path = 'video/' + file
+            print(video_path)
+            cap = cv2.VideoCapture(video_path)
+            time_begin = get_start_time(file)
+
+            face_times = []
+
+            indice = 0
+            count_frame = 0
+            while True:
+                ret, frame = cap.read()
+
+                if not ret:
+                    print("Error: failed to capture image")
+                    break
+
+                if (indice % 40 == 0):
+                    frame, curr_face_times = process_func(frame, indice)
+
+                ret, frame = cv2.imencode('.jpg', frame)
+                if (len(curr_face_times) > 0):
+                    name, frame_indice = curr_face_times[0]
+                    if (frame_indice == indice):
+                        face_times.extend(curr_face_times)
+                        for names, frame_indice in curr_face_times:
+                            print(names, frame_indice)
+                            print()
+
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
+
+                indice += 1
+
+            for name, frame_index in face_times:
+                time_appear = time_begin + datetime.timedelta(0, frame_index / 25)
+                result.write(name + '\t' + str(time_appear))       
 
 
 def human_detection(request):
