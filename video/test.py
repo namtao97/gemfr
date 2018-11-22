@@ -20,11 +20,9 @@ def solve():
 
 if __name__ == "__main__":
     a = 'Camera1_cam2_cam2_20181113114949_20181113115534_6528826'
-    print(a[-10:])
-    # b = get_start_time(a)
-    # print(b)
-    # b += datetime.timedelta(0, 120)
-    # print(b)
-    # v = solve()
-    # for a, b in v:
-    #     print(a, b)
+    time_begin = get_start_time(a)
+    name = 'Nam'
+    frame_indice = 1400
+    time_appear = time_begin + datetime.timedelta(0, frame_indice / 25)
+    result = open('result.txt', 'a')
+    result.write(name + '\t' + str(time_appear) + '\n')

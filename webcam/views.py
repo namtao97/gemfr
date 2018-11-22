@@ -28,37 +28,37 @@ def get_start_time(file_name):
     return res
 
 
-def process_video(file_name):
-    video_path = 'video/' + file_name
-    cap = cv2.VideoCapture(video_path)
-    time_begin = get_start_time(file_name)
+# def process_video(file_name):
+#     video_path = 'video/' + file_name
+#     cap = cv2.VideoCapture(video_path)
+#     time_begin = get_start_time(file_name)
 
-    face_times = []
+#     face_times = []
 
-    indice = 0
-    count_frame = 0
-    while True:
-        ret, frame = cap.read()
+#     indice = 0
+#     count_frame = 0
+#     while True:
+#         ret, frame = cap.read()
 
-        if not ret:
-            print("Error: failed to capture image")
-            break
+#         if not ret:
+#             print("Error: failed to capture image")
+#             break
 
-        if (indice % 40 == 0):
-            frame, curr_face_times = process_func(frame, indice)
+#         if (indice % 40 == 0):
+#             frame, curr_face_times = process_func(frame, indice)
 
-        ret, frame = cv2.imencode('.jpg', frame)
-        face_times.extend(curr_face_times)
+#         ret, frame = cv2.imencode('.jpg', frame)
+#         face_times.extend(curr_face_times)
 
-        yield (b'--frame\r\n'
-            b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
+#         yield (b'--frame\r\n'
+#             b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
 
-        indice += 1
+#         indice += 1
 
-    with open('result.txt', 'a') as result:
-        for name, frame_idex in face_times:
-            time_appear = time_begin + datetime.timedelta(0, frame_index / 25)
-            result.write(name + '\t' + str(time_appear))
+#     with open('result.txt', 'a') as result:
+#         for name, frame_idex in face_times:
+#             time_appear = time_begin + datetime.timedelta(0, frame_index / 25)
+#             result.write(name + '\t' + str(time_appear))
 
 
 
@@ -72,6 +72,8 @@ def stream(process_func):
             cap = cv2.VideoCapture(video_path)
             time_begin = get_start_time(file)
 
+            print(time_begin)
+            
             face_times = []
 
             indice = 0
@@ -91,8 +93,10 @@ def stream(process_func):
                     name, frame_indice = curr_face_times[0]
                     if (frame_indice == indice):
                         face_times.extend(curr_face_times)
-                        for names, frame_indice in curr_face_times:
-                            print(names, frame_indice)
+                        for name, frame_indice in curr_face_times:
+                            time_appear = time_begin + datetime.timedelta(0, int(frame_indice / 25))
+                            result.write(name + '\t' + str(time_appear) + '\n')
+                            print(name, str(time_appear), frame_indice)
                             print()
 
                 yield (b'--frame\r\n'
@@ -100,9 +104,10 @@ def stream(process_func):
 
                 indice += 1
 
-            for name, frame_index in face_times:
-                time_appear = time_begin + datetime.timedelta(0, frame_index / 25)
-                result.write(name + '\t' + str(time_appear))       
+            # print(face_times)
+            # for name, frame_index in face_times:
+            #     time_appear = time_begin + datetime.timedelta(0, frame_index / 25)
+            #     result.write(name + '\t' + str(time_appear))       
 
 
 def human_detection(request):
